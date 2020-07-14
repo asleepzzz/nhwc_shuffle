@@ -213,6 +213,7 @@ set( MIOpen_Source
     solver/conv_ocl_dir2Dfwd1x1.cpp
     solver/conv_hip_implicit_gemm_v4r1.cpp
     solver/conv_hip_implicit_gemm_v4r4.cpp
+    solver/conv_hip_implicit_gemm_mlir.cpp
     solver/conv_hip_implicit_gemm_wrw_weights_v4r4.cpp
     solver/conv_hip_implicit_gemm_v4r4_gen_xdlops.cpp
     solver/conv_hip_implicit_gemm_fwd_v4r4_xdlops.cpp
@@ -650,3 +651,18 @@ install(FILES
  DESTINATION ${DATA_INSTALL_DIR}/db)
 
 rocm_install_symlink_subdir(${MIOPEN_INSTALL_DIR})
+
+## Install miopen_gridwise_gemm_builder.sh.
+#install(FILES kernels/composable_kernel/bin/miopen_gridwise_gemm_builder.sh
+#  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+#  DESTINATION ${MIOPEN_INSTALL_DIR}/bin)
+
+# Install miopen_mlir_generator.sh.
+install(FILES kernels/composable_kernel/bin/miopen_mlir_generator.sh
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+  DESTINATION ${MIOPEN_INSTALL_DIR}/bin)
+
+# Install miopen_mlir_cflags.sh.
+install(FILES kernels/composable_kernel/bin/miopen_mlir_cflags.sh
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+  DESTINATION ${MIOPEN_INSTALL_DIR}/bin)

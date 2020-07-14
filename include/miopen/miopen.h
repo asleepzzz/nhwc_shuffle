@@ -479,6 +479,9 @@ MIOPEN_EXPORT miopenStatus_t miopenCreateTensorDescriptor(miopenTensorDescriptor
 MIOPEN_EXPORT miopenStatus_t miopenSet4dTensorDescriptor(
     miopenTensorDescriptor_t tensorDesc, miopenDataType_t dataType, int n, int c, int h, int w);
 
+MIOPEN_EXPORT miopenStatus_t miopenSet4dTensorDescriptorLayout(miopenTensorDescriptor_t tensorDesc,
+                                                               const char* layout);
+
 /*! @brief Get the details of the tensor descriptor
  *
  * Interface to query the 4-D tensor shape.
@@ -766,6 +769,9 @@ miopenGetConvolutionNdDescriptor(miopenConvolutionDescriptor_t convDesc,
 */
 MIOPEN_EXPORT miopenStatus_t miopenSetConvolutionGroupCount(miopenConvolutionDescriptor_t convDesc,
                                                             int groupCount);
+
+MIOPEN_EXPORT miopenStatus_t miopenSetConvolutionForceXDLOPS(miopenConvolutionDescriptor_t convDesc,
+                                                             bool forceXdlops);
 
 /*! @brief Set the output padding to be used in 2-D Transpose convolution
 *

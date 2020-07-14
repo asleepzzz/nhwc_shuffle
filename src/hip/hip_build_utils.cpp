@@ -90,6 +90,11 @@ boost::filesystem::path HipBuild(boost::optional<TmpDir>& tmp_dir,
                                  const std::string& dev_name)
 {
 #ifdef __linux__
+    MIOPEN_LOG_I("filename: " << filename);
+    MIOPEN_LOG_I("src: " << src);
+    MIOPEN_LOG_I("params: " << params);
+    MIOPEN_LOG_I("dev_name: " << dev_name);
+
     // write out the include files
     auto inc_list = GetKernelIncList();
     auto inc_path = tmp_dir->path;
@@ -99,8 +104,52 @@ boost::filesystem::path HipBuild(boost::optional<TmpDir>& tmp_dir,
         auto inc_src = GetKernelInc(inc_file);
         WriteFile(inc_src, inc_path / inc_file);
     }
-    src += "\nint main() {}\n";
-    WriteFile(src, tmp_dir->path / filename);
+    auto input_file = tmp_dir->path / filename;
+
+    // Invoke mlir kernel generator if filename has mlir in it
+    if(filename.find("mlir") != std::string::npos)
+    {
+        // Should not have src content for mlir generated files
+        assert(src.empty());
+
+        // invoke mlir kernel generator.
+        auto mlir_file = tmp_dir->path / input_file.stem();
+        MIOPEN_LOG_I("invoke MLIR kernel generator.");
+        MIOPEN_LOG_I("C++ source: " << mlir_file.string() << ".cpp");
+        MIOPEN_LOG_I("C++ header: " << mlir_file.string() << ".hpp");
+        // --p=false to disable MLIR default value population
+        tmp_dir->Execute("/opt/rocm/miopen/bin/miopen_mlir_generator.sh",
+                         mlir_file.string() + " " + params + " --p=false");
+
+        // get mlir kernel compilation flags.
+        auto mlir_cflags_file = mlir_file;
+        mlir_cflags_file += "_cflags";
+        MIOPEN_LOG_I("getting MLIR kernel cflags.");
+        // --p=false to disable MLIR default value population
+        tmp_dir->Execute("/opt/rocm/miopen/bin/miopen_mlir_cflags.sh",
+                         mlir_cflags_file.string() + " " + params + " --p=false");
+
+        if(!boost::filesystem::exists(mlir_cflags_file))
+            MIOPEN_THROW(filename + " failed to build due to missing compile-time flags");
+
+        std::string cflags("");
+        bin_file_to_str(mlir_cflags_file, cflags);
+
+        // skip first line
+        cflags     = cflags.substr(cflags.find("\n") + 1);
+        size_t pos = cflags.find("\n");
+        if(pos != std::string::npos)
+        {
+            cflags.replace(pos, sizeof("\n"), " ");
+        }
+
+        params = cflags;
+    }
+    else
+    {
+        src += "\nint main() {}\n";
+        WriteFile(src, tmp_dir->path / filename);
+    }
 
     auto env = std::string("");
     if(IsHccCompiler())
@@ -111,7 +160,7 @@ boost::filesystem::path HipBuild(boost::optional<TmpDir>& tmp_dir,
     else if(IsHipClangCompiler())
     {
         if(params.find("-std=") == std::string::npos)
-            params += " --std=c++11";
+            params += " --std=c++14";
         params += " --cuda-gpu-arch=" + dev_name;
         params += " --cuda-device-only";
         params += " -c";
